@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Nuha's">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<meta name="theme-color" content="#2f7d32">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nuha Pastry</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Cormorant+Garamond:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="divider">✦ ✦ ✦</div>
+  <!-- SPLASH SCREEN -->
+<div id="splash">
+  <div class="splash-center">
+    <h1>Nuha's Pastry</h1>
+  </div>
+</div>
+<div class="menu-card">
+
+<header>
+  <h1>Nuha's Pastry</h1>
+  <div class="lang">
+    <button onclick="setLanguage('en')">English</button>
+    <button onclick="setLanguage('am')">አማርኛ</button>
+  </div>
+</header>
+
+<!-- TABS -->
+<div id="topTabs">
+  <div class="tab active" onclick="flipTo(0)">Main Dishes</div>
+  <div class="tab" onclick="flipTo(1)">Desserts</div>
+  <div class="tab" onclick="flipTo(2)">Drinks</div>
+</div>
+
+<!-- SEARCH -->
+<div class="search-box">
+  <input type="text" id="searchInput" placeholder="Search food...">
+</div>
+
+<!-- MENU CONTENT -->
+<div class="menu-content">
+  <div class="left">
+    
+    <!-- BOOK / PAGE CONTAINER -->
+    <div id="book">
+      <div class="page">
+
+        <!-- NEW CHALKBOARD PAGE WRAPPER -->
+        <div id="menuArea" class="menu-page">
+          <!-- Items will be injected here by JS -->
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+<!-- Description Editor Modal -->
+<div id="descModal" class="desc-modal">
+  <div class="desc-content">
+    <h2>Edit Description</h2>
+    <label>English</label>
+    <textarea id="descEnBox" rows="3" placeholder="English description..."></textarea>
+
+    <label>Amharic</label>
+    <textarea id="descAmBox" rows="3" placeholder="Amharic description..."></textarea>
+
+    <div class="desc-actions">
+      <button id="descSaveBtn">Save</button>
+      <button id="descCancelBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+
+<!-- ADMIN PANEL -->
+<div class="admin-panel" id="adminPanel">
+  <div id="loginBox">
+    <div class="login-inner">
+    <h2>Admin Panel</h2>
+    <input type="password" id="adminPin" placeholder="Enter PIN">
+    <button onclick="checkPin()">Login</button>
+  </div>
+  </div>
+  <div id="editor" style="display:none;">
+   <table id="adminTable">
+  <thead>
+    <tr>
+      <th>English</th>
+      <th>Amharic</th>
+      <th>Price (ETB)</th>
+      <th>Category</th>
+      <th>Delete</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+    <button onclick="addItem()">➕ Add Item</button>
+    <button onclick="saveMenu()">💾 Save Changes</button>
+    <button onclick="closeAdmin()">🚪 Close Admin</button>
+
+  </div>
+  </div>
+
+  <!-- Food Description Popup -->
+<div id="foodTip" class="food-tip"></div>
+
+<!-- FLIP SOUND -->
+<audio id="flipSound" preload="auto">
+  <source src="flip.mp3" type="audio/mpeg">
+</audio>
+</body>
+</html>
