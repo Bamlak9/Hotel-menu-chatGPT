@@ -20,16 +20,18 @@
   <!-- SPLASH SCREEN -->
 <div id="splash">
   <div class="splash-center">
-    <h1>Nuha's Pastry</h1>
+    <h1>Nuha Pastry</h1>
   </div>
 </div>
 <div class="menu-card">
 
 <header>
-  <h1>Nuha's Pastry</h1>
+  <h1>Nuha Pastry</h1>
   <div class="lang">
-    <button onclick="setLanguage('en')">English</button>
-    <button onclick="setLanguage('am')">አማርኛ</button>
+    <select id="langSelect" onchange="setLanguage(this.value)" aria-label="Language selector">
+      <option value="en">English</option>
+      <option value="am">አማርኛ</option>
+    </select>
   </div>
 </header>
 
@@ -112,8 +114,8 @@
   </div>
   </div>
 
-  <!-- Food Description Popup -->
-<div id="foodTip" class="food-tip"></div>
+  <!-- Toast notifications -->
+  <div id="toast" class="toast" aria-live="polite" aria-atomic="true"></div>
 
 <!-- FLIP SOUND -->
 <audio id="flipSound" preload="auto">

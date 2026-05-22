@@ -3,6 +3,111 @@ body {
   font-family: "Segoe UI", Arial, sans-serif;
   background: #f3ead7;
 }
+/* SPLASH SCREEN: circular mask with gradient glow, outer ring and shimmer */
+#splash {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, rgba(243,234,215,0.95), rgba(250,244,238,0.95));
+  z-index: 1000;
+}
+
+/* reveal / hide helpers: fade the whole overlay and animate the circle */
+#splash {
+  /* accents matched to the menu palette */
+  --accent-gold: #e2c48c;
+  --accent-deep: #8b0000;
+  --accent-glow: rgba(226,196,140,0.14);
+  --splash-ease: cubic-bezier(.16,.84,.34,1);
+  --splash-fade-dur: 1100ms;
+  --splash-center-dur: 1400ms;
+
+  opacity: 1;
+  visibility: visible;
+  transition: opacity var(--splash-fade-dur) var(--splash-ease), visibility var(--splash-fade-dur);
+  pointer-events: auto;
+}
+
+#splash.hide {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* initial compact state for nicer reveal */
+.splash-center {
+  transform: scale(0.94);
+  opacity: 0;
+  transition: transform var(--splash-center-dur) var(--splash-ease), opacity var(--splash-center-dur) var(--splash-ease);
+}
+
+#splash.reveal .splash-center {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.splash-center {
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+  radial-gradient(circle at 30% 25%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.06) 12%, transparent 62%),
+  linear-gradient(135deg, var(--accent-gold) 0%, var(--accent-deep) 70%);
+  box-shadow: 0 18px 68px rgba(0,0,0,0.28), 0 0 120px var(--accent-glow);
+  border: 2px solid rgba(0,0,0,0.08);
+  overflow: hidden;
+  animation: splash-pulse 5s var(--splash-ease) infinite;
+}
+
+.splash-center::before {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  background: conic-gradient(from 150deg, rgba(226,196,140,0.22), rgba(139,0,0,0.20), transparent 66%);
+  filter: blur(12px);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.splash-center::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: linear-gradient(120deg, rgba(255,255,255,0), rgba(255,255,255,0.22), rgba(255,255,255,0));
+  transform: translateX(-140%);
+  mix-blend-mode: screen;
+  animation: sweep 7s linear infinite;
+  z-index: 2;
+  pointer-events: none;
+}
+
+#splash h1 {
+  font-family: "Cinzel", serif;
+  color: #fff7eb;
+  font-size: 34px;
+  letter-spacing: 2px;
+  z-index: 3;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  margin: 0;
+  transform: translateZ(30px);
+}
+
+@keyframes splash-pulse {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.018); }
+  65% { transform: scale(1.01); }
+  100% { transform: scale(1); }
+}
+
+@keyframes sweep { 0% { transform: translateX(-140%); } 100% { transform: translateX(140%); } }
 
 .menu-card {
   background: #fffaf0;
@@ -36,12 +141,33 @@ h1 {
   background: #f2f2f2;
 }
 
+/* Style the compact language select to match header buttons */
+.lang select {
+  background: #fff;
+  border: 1px solid #ccc;
+  padding: 6px 10px;
+  border-radius: 5px;
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+.lang select:hover {
+  background: #f2f2f2;
+}
+
 .search-box {
   margin: 12px 0;
+  display: flex;
+  justify-content: center;
 }
 
 .search-box input {
   width: 100%;
+  max-width: 600px; /* limit horizontal length */
+  display: block;
   padding: 10px;
   border-radius: 8px;
   border: 1px solid #ccc;
@@ -95,7 +221,7 @@ li {
   background: white;
   width: 100%;
   height: 100%;
-  padding: 20px;
+  padding: 10px;
   display: none;
   overflow-y: auto;
 }
@@ -162,32 +288,18 @@ li {
 }
 .page {
   width: 100%;
-  min-height: 85vh;
+  min-height: 100vh;
   background: #fff;
-  border-radius: 10px;
+  border-radius: 0;
   position: relative;
   transform-style: preserve-3d;
   perspective: 1600px;
-  box-shadow: 0 8px 22px rgba(0,0,0,0.2), inset 0 0 40px rgba(255,255,255,0.04);
+  box-shadow: none;
   overflow: hidden;
   transition: transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
   backface-visibility: hidden;
   will-change: transform;
 }
-/*
-.page {
-  width: 100%;
-  min-height: 85vh;
-  background: #fff;
-  border-radius: 10px;
-  position: relative;
-  transform-style: preserve-3d;
-  perspective: 1600px;
-  box-shadow: 0 8px 22px rgba(0,0,0,0.2);
-  overflow: hidden;
-  transition: box-shadow 0.3s ease;
-}
-*/
 /* Flip effect */
 .page.flip {
   transform: rotateY(-180deg);
@@ -208,16 +320,13 @@ li {
 
 .tab {
   padding: 12px 16px;
+  padding: 10px;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s ease;
   color: #666;
-}
-
-.tab {
   position: relative;
 }
-
 .tab.active {
   color: #000;
   transform: translateY(-2px);
@@ -330,26 +439,25 @@ li {
 .menu-page {
   background: #1a1a1a;
   border: 10px solid #5d3b1a;
-  padding: 25px;
+  border-radius: 6px;
+  border-width: 6px !important;            /* thinner frame */
+  padding: 20px !important;                /* more padding for breathing room */
   color: #fff;
   min-height: 500px;
   box-shadow: inset 0 0 30px rgba(255,255,255,0.07);
   font-family: "Cormorant Garamond", serif;
-  border-radius: 6px;
+  
 }
-/*
-.chalk-section {
-  margin-top: 40px;
-  margin-bottom: 20px;
-}
-*/
-
 .chalk-info {
   flex: 1;
-  display: flex;
-  align-items: center;   /* keeps name and price on the same line */
-  gap: 8px;
-  padding-left: 8px;     /* closer to image */
+  display: grid;
+  grid-template-columns: 1fr auto; /* left content + right price */
+  grid-template-rows: auto auto;   /* name + description */
+  column-gap: 10px;
+  flex-direction: column;  /* stack name and price vertically */
+  align-items: flex-start; /* align to the left */
+  gap: 4px;               /* small gap between name and price */
+  padding-left: 8px;      /* closer to image */
   width: 100%;
 }
 .chalk-title {
@@ -374,13 +482,6 @@ li {
   letter-spacing: 6px;
   margin: 6px 0;
 }
-/* LINE BETWEEN NAME & PRICE */
-.chalk-line {
-  flex: 1;
-  height: 2px;
-  margin: 0 6px;
-  background-image: linear-gradient(to right, transparent, rgba(255,255,255,0.4), transparent);
-}
 /* NO ITEMS */
 .no-items {
   color: #ffcccc;
@@ -388,7 +489,6 @@ li {
   font-size: 20px;
   padding-top: 40px;
 }
-
 /* SEARCH HIGHLIGHT */
 .highlight {
   background: #fff;
@@ -396,41 +496,37 @@ li {
   padding: 2px 4px;
   border-radius: 3px;
 }
-/* ===== Menu Item Entrance Animation ===== */
-/* CHALKBOARD ITEM */
-/* ===== Final UI Polish ===== */
-
+ /* Local font: Oriental Chicken (placed in ./fonts/Oriental Chicken.ttf) */
+@font-face {
+  font-family: 'ITCKRIST';
+  src: local('ITCKRIST'), url('fonts/ITCKRIST.TTF') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
 /* chalk item depth */
 .chalk-item {
   border-radius: 6px;
+  margin: 0 0 16px 0; /* only bottom margin for spacing */
+  display: flex;
+  gap: 12px;
+  padding: 16px 0; /* increased padding for better spacing */
+  opacity: 0;
+  transform: translateY(10px);
+  animation: menuFadeIn 1s ease-out forwards;
+  justify-content: flex-start; /* Keeps image and info tucked to the left */
+  align-items: flex-start; /* keep image fixed and text stacked */
   transition: background 0.2s ease, transform 0.15s ease;
+  border-bottom: 2px solid rgba(255,255,255,0.05);
 }
 
-/* tap / hover feedback */
 .chalk-item:active {
   background: rgba(255,255,255,0.08);
   transform: scale(0.98);
 }
-/* subtle rhythm break for long lists */
+/* gentle pause every few items (menu breathing) */
 .chalk-item:nth-child(4n) {
-  margin-bottom: 22px;
-}
-/* ===== Image-ready menu layout ===== */
-
-.chalk-item {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-.chalk-item {
-  margin: 10px 0;
-  padding: 5px 0;
-  justify-content: flex-start; /* Keeps image and info tucked to the left */
-}
-.chalk-item {
-  opacity: 0;
-  transform: translateY(10px);
-  animation: menuFadeIn 1s ease-out forwards;
+  margin-bottom: 24px;
 }
 
 @keyframes menuFadeIn {
@@ -445,112 +541,86 @@ input:focus {
   outline: 2px solid #007acc;
   outline-offset: 2px;
 }
-
-/*
-.page {
-  box-shadow:
-    0 10px 30px rgba(0,0,0,0.25),
-    inset 0 0 40px rgba(255,255,255,0.04);
-}
-*/
-
-/* image placeholder */
-.chalk-image {
-  width: 60px;
-  height: 60px;
-  flex-shrink: 0;
-  border-radius: 8px;
-  background: rgba(255,255,255,0.08);
-}
 .chalk-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   border-radius: 8px;
 }
-/* ===== MENU IMAGES (MOBILE) ===== */
-
-.chalk-item {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  margin: 14px 0;
-}
-
 .chalk-img {
   width: 70px;
   height: 70px;
   border-radius: 8px;
   overflow: hidden;
-  flex-shrink: 0;
+  flex: 0 0 70px; /* lock size and prevent shrinking/growing */
   background: #111;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.08);
 }
-
 .chalk-img img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
-/* Subtle old-menu image frame */
-.chalk-img {
-  box-shadow: 0 2px 6px rgba(0,0,0,0.35);
-  border: 1px solid rgba(255,255,255,0.08);
-}
 /* text container - STACKED VERSION */
-/* PRICE */
+/* DESCRIPTION */
+.chalk-desc {
+  grid-column: 1;
+  grid-row: 2;
+  font-size: 0.92rem;
+  color: rgba(255,255,255,0.85);
+  line-height: 1.4;
+  max-width: 100%;
+  white-space: normal;
+  word-break: break-word;
+  margin-top: 2px;
+  margin-bottom: 6px;
+}
+        /* PRICE */
 .chalk-price {
-  white-space: nowrap;
-  font-size: 15px;
+  grid-column: 2;
+  grid-row: 1 / span 2; /* spans both rows */
+  align-self: center;   /* vertical center */
+  justify-self: end;    /* push to right */
+  display: block;
+  margin-top: 2px;          /* tightened spacing below description */
+  margin-left: 10px;        /* slight right offset */
+  font-size: 14px;
   font-weight: bold;
   color: #f5d28a;
-  padding-left: 8px;
-  white-space: nowrap;
   letter-spacing: 0.5px;
   opacity: 0.95;
-  align-self: flex-end;
-}
+  white-space: normal;
+  padding-left: 10px;
+  min-width: 70px;     /* 🔥 KEY: keeps all prices aligned */
+  text-align: right;
+} 
 /* MOBILE BOOST */
 @media (max-width: 480px) {
-  .chalk-name {
-    max-width: 60%;
-    font-size: 14px;
-  }
-
-  .chalk-price {
-    font-size: 14px;
-  }
+.chalk-name {
+  grid-column: 1;
+  grid-row: 1;
+  max-width: 55%;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: normal;          /* allow wrapping */
+  word-break: break-word;       /* break long words properly */
+  white-space: nowrap;        /* keeps it on one line */
+  overflow: hidden;
+  text-overflow: ellipsis;    /* adds ... if too long */
+  color: #ffffff;
+  line-height: 1.2;
+  margin-bottom: 2px;
 }
-/* === STEP A: MENU STRUCTURE RHYTHM === */
-
+}
+.chalk-name {
+  font-family: 'ITCKRIST', Georgia, serif;
+}
 /* stronger separation between categories */
 .chalk-section {
   margin-top: 48px;
   margin-bottom: 26px;
-}
-
-/* tighter vertical rhythm inside items */
-.chalk-item {
-  margin: 12px 0;
-}
-
-/* gentle pause every few items (menu breathing) */
-.chalk-item:nth-child(4n) {
-  margin-bottom: 24px;
-}
-/* === STEP B: MENU ITEM CARD REFINEMENT === */
-
-.chalk-name {
-  white-space: normal;
-  max-width: 55%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 15px;
-  font-weight: 600;
-  color: #ffffff;
-  line-height: 1.2;
-  margin-bottom: 2px;
-  word-break: normal;
 }
 /* Improve Amharic readability */
 [lang="am"] .chalk-name {
@@ -639,7 +709,7 @@ input:focus {
   z-index: 99999;
 
   clip-path: circle(100% at 50% 50%);
-  transition: clip-path 1s ease, opacity 0.4s ease;
+  transition: clip-path 3s ease, opacity 0.4s ease;
 }
 
 #splash.reveal {
@@ -677,6 +747,32 @@ input:focus {
   opacity: 1;
   transform: scale(1);
 }
+/* Toast notification (non-blocking) */
+.toast {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  background: rgba(0,0,0,0.85);
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  z-index: 100000;
+  pointer-events: auto;
+  max-width: 320px;
+  font-size: 14px;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (max-width: 480px) {
+  .toast { left: 50%; right: auto; transform: translateX(-50%) translateY(0); }
+}
 /* Unavailable menu visuals */
 .chalk-item.unavailable {
   opacity: 0.45;
@@ -707,11 +803,10 @@ input:focus {
 }
 /* Keeps long "Not available today" messages contained */
 .chalk-item .chalk-price {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;          /* allow text to break onto a new line */
+  display: block;
   white-space: normal;      /* allow wrapping instead of one long line */
   max-width: 100%;          /* prevent overflow on small screens */
+  margin-top: 4px;
 }
 
 /* Style specifically for "Not available today" text */
@@ -726,6 +821,12 @@ input:focus {
 
 /* On very small devices, shrink slightly to fit */
 @media (max-width: 420px) {
+  .chalk-item {
+    padding: 12px 0;
+    margin-bottom: 12px;
+    gap: 10px;
+  }
+  
   .chalk-item .soldout {
     font-size: 13px;
   }
@@ -743,14 +844,13 @@ input:focus {
 
 .desc-content {
   background: #fffaf0;
-  padding: 20px;
+  padding: 15px;
   border-radius: 10px;
-  width: 90%;
-  max-width: 450px;
+  width: 95%;
+  max-width: 360px;
   box-shadow: 0 6px 20px rgba(0,0,0,0.3);
   text-align: left;
 }
-
 .desc-content h2 {
   text-align: center;
   margin-top: 0;
@@ -797,6 +897,31 @@ input:focus {
   text-align: left;
   vertical-align: middle;
   white-space: nowrap;       /* keep columns on a single line */
+}
+
+/* Mobile: use full-width layout and increase spacing for images/text */
+@media (max-width: 600px) {
+  .menu-card {
+    margin: 0 auto;                 /* use entire viewport width */
+    padding: 14px 12px;        /* comfortable inner spacing */
+    border-radius: 0;          /* full-bleed look */
+    box-shadow: none;          /* reduce visual clipping on small screens */
+  }
+
+  /* Allow book component to expand to full width */
+  #book {
+    max-width: 100%;
+    width: 100%;
+    margin: 0;
+    min-height: 60vh;
+  }
+  .search-box input {
+    padding: 12px;
+  }
+  header {
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+  }
 }
 
 /* give comfortable width for inputs & selects */
@@ -853,50 +978,23 @@ input:focus {
     font-size: 12px;
     padding: 4px 5px;
   }
-
-  /* reduce overall panel padding */
-  .admin-panel {
-    padding: 10px;
-  }
-
-  /* smaller description modal */
-  .desc-content {
-    width: 95%;
-    max-width: 360px;
-    padding: 15px;
-  }
 }
 /* --- Widen chalkboard for mobile screens --- */
 @media (max-width: 768px) {
   #book {
     max-width: 100vw !important;              /* full-screen width */
     margin: 0 auto !important;
-    perspective: none;            /* simplifies on small viewports */
+    /*perspective: none;   */         /* simplifies on small viewports */
   }
-
-  .menu-page {
-    padding: 20px !important;                /* more padding for breathing room */
-    border-width: 6px !important;            /* thinner frame */
-  }
-
-  .chalk-item {
-    gap: 10px;                     /* balanced spacing */
-    margin: 16px 0;                /* more vertical space */
-  }
-
-  .chalk-img {
-    width: 85px;
-    height: 85px;
-  }
-
+  
+}
+@media (max-width: 480px) {
   .chalk-name {
-    font-size: 17px;              /* larger for readability */
-    max-width: 65%;               /* allow more space for name */
-    white-space: normal;          /* allow wrapping */
-    word-break: break-word;       /* break long words properly */
+    font-size: 14px;
   }
 
   .chalk-price {
-    font-size: 16px;
+    font-size: 14px;
+    min-width: 60px;
   }
 }

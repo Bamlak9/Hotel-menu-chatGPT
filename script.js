@@ -1,14 +1,56 @@
 //OPTIONAL
 let audioUnlocked = false;
+// toast timer
+let toastTimer = null;
+// Translations for UI strings
+const translations = {
+  en: {
+    title: "Nuha Pastry",
+    main: "Main Dishes",
+    dessert: "Desserts",
+    drink: "Drinks",
+    search: "Search food...",
+    noItems: "No items found.",
+    admin: "Admin Panel",
+    login: "Login"
+  },
+  am: {
+    title: "ኑሀ ኬክ ቤት",
+    main: "ዋና ምግቦች",
+    dessert: "ጣፋጮች",
+    drink: "መጠጦች",
+    search: "ምግብ ፈልግ...",
+    noItems: "ምንም አልተገኘም",
+    admin: "አስተዳደር",
+    login: "ግባ"
+  }
+};
 // CLEAN INITIALIZATION (runs once)
 document.addEventListener("DOMContentLoaded", () => {
-  // Auto-detect language
-  const userLang = navigator.language || "en";
-  currentLang = userLang.startsWith("am") ? "am" : "en";
+  // Determine language: saved preference -> auto-detect -> default
+  const savedLang = localStorage.getItem("lang");
+  if (savedLang && translations[savedLang]) {
+    currentLang = savedLang;
+  } else {
+    const userLang = navigator.language || "en";
+    currentLang = userLang.startsWith("am") ? "am" : "en";
+  }
 
   loadMenu();                    // load saved or default menu
   renderMenu(pages[pageIndex]);  // render first page
   updateActiveTab();             // activate first tab
+  // Apply UI strings for current language
+  document.documentElement.setAttribute("lang", currentLang);
+  const s = document.getElementById("searchInput");
+  if (s) s.placeholder = translations[currentLang].search;
+  if (translations[currentLang] && translations[currentLang].title) {
+    document.title = translations[currentLang].title;
+  }
+  // update static UI text
+  updateUIText();
+  // reveal splash animation (slight delay so paint can occur)
+  const _splash = document.getElementById('splash');
+  if (_splash) setTimeout(() => _splash.classList.add('show'), 60);
 });
 // PAGE SYSTEM (MUST BE FIRST)
 const pages = ["main", "dessert", "drink"];
@@ -161,7 +203,29 @@ function saveMenu() {
   // refresh current page and keep any search term
   const searchVal = document.getElementById("searchInput")?.value || "";
   renderMenu(pages[pageIndex], searchVal);
-  alert("Saved successfully!");
+  showToast("Saved successfully!");
+}
+
+function showToast(message, ms = 2200) {
+  if (!message) return;
+  let el = document.getElementById('toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'toast';
+    el.className = 'toast';
+    el.setAttribute('aria-live', 'polite');
+    el.setAttribute('aria-atomic', 'true');
+    document.body.appendChild(el);
+  }
+
+  el.textContent = message;
+  el.classList.add('show');
+
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    el.classList.remove('show');
+    toastTimer = null;
+  }, ms);
 }
 
 // HIGHLIGHT SEARCH
@@ -170,6 +234,25 @@ function highlight(text, word) {
   let re = new RegExp("(" + escapeRegExp(word) + ")", "gi");
   return text.replace(re, "<span class='highlight'>$1</span>");
 }
+// safe highlighting that preserves HTML-escaping (prevents XSS)
+function highlightSafe(text, word) {
+  if (!word) return escapeHtml(text);
+  const re = new RegExp(escapeRegExp(word), 'gi');
+  let result = '';
+  let lastIndex = 0;
+  let match;
+  while ((match = re.exec(text)) !== null) {
+    const start = match.index;
+    const end = re.lastIndex;
+    result += escapeHtml(text.slice(lastIndex, start));
+    result += `<span class="highlight">${escapeHtml(text.slice(start, end))}</span>`;
+    lastIndex = end;
+    // protect against infinite loop on empty matches
+    if (re.lastIndex === match.index) re.lastIndex++;
+  }
+  result += escapeHtml(text.slice(lastIndex));
+  return result;
+}
 function escapeRegExp(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -177,6 +260,7 @@ function escapeRegExp(string) {
 // RENDER MENU
 function renderMenu(filter = "all", search = "") {
   let area = document.getElementById("menuArea");
+  if (!area) return; // guard if DOM not present
   let html = "";
   if (!Array.isArray(menu)) {
     console.warn("renderMenu called but menu is not an array", menu);
@@ -185,9 +269,18 @@ function renderMenu(filter = "all", search = "") {
   console.debug(`renderMenu(${filter}, "${search}") – ${menu.length} items, lang=${currentLang}`);
 
   let cats = {
-    main: "Main Dishes",
-    dessert: "Desserts",
-    drink: "Drinks"
+    main: {
+    en: "Main Dishes",
+    am: "ዋና ምግቦች"
+    },
+    dessert: {
+    en: "Desserts",
+    am: "ጣፋጮች"
+    },
+    drink: {
+    en: "Drinks",
+    am: "መጠጦች"
+    }
   };
 
   let currentCat = "";
@@ -209,12 +302,16 @@ function renderMenu(filter = "all", search = "") {
       if (currentCat !== item.cat) {
         html += `
           <div class="chalk-section">
-            <div class="chalk-title">${cats[item.cat]}</div>
+            <div class="chalk-title">${cats[item.cat][currentLang]}</div>
           </div>
         `;
         currentCat = item.cat;
       }
       // Chalkboard item
+      // use safe highlighting to avoid injecting unescaped HTML
+      const displayName = highlightSafe(name, search);
+      const description = item[currentLang === 'am' ? 'desc_am' : 'desc'] || item.desc || '';
+      const displayDesc = description ? highlightSafe(description, search) : '';
       html += `
   <div class="chalk-item ${!item.available ? 'unavailable' : ''}">
     <div class="chalk-img">
@@ -225,16 +322,17 @@ function renderMenu(filter = "all", search = "") {
     </div>
 
     <div class="chalk-info">
-      <div class="chalk-name">${highlight(name, search)}</div>
+      <div class="chalk-name">${displayName}</div>
+      <div class="chalk-desc">${displayDesc}</div>
       <div class="chalk-line"></div>
       <div class="chalk-price">
-        ${item.available ? `ETB ${item.price}` : `<span class="soldout">Not available today</span>`}
+        ${item.available ? `ETB ${item.price}` : `<span class="soldout">Not available today</span>`}
       </div>
     </div>
   </div>
 `;
       });
-  area.innerHTML = html || "<p class='no-items'>No items found.</p>";
+  area.innerHTML = html || `<p class='no-items'>${escapeHtml(translations[currentLang].noItems)}</p>`;
   
 }
 function escapeHtml(text) {
@@ -258,18 +356,51 @@ function setLanguage(lang) {
   currentLang = lang;
   // This line tells the CSS which language we are using
   document.documentElement.setAttribute("lang", lang);
+  // persist preference
+  try { localStorage.setItem("lang", lang); } catch (e) { /* ignore */ }
+  // update UI strings
+  const s = document.getElementById("searchInput");
+  if (s) s.placeholder = translations[lang].search;
+  if (translations[lang] && translations[lang].title) document.title = translations[lang].title;
   renderMenu(pages[pageIndex], document.getElementById("searchInput")?.value || "");
   updateActiveTab();
+  updateUIText();
+}
+
+// Update UI text nodes that are static in HTML
+function updateUIText() {
+  const t = translations[currentLang] || translations.en;
+  const headerTitle = document.querySelector('header h1');
+  if (headerTitle) headerTitle.textContent = t.title;
+  const splashTitle = document.querySelector('#splash h1');
+  if (splashTitle) splashTitle.textContent = t.title;
+  const tabs = document.querySelectorAll('#topTabs .tab');
+  if (tabs.length >= 3) {
+    tabs[0].textContent = t.main;
+    tabs[1].textContent = t.dessert;
+    tabs[2].textContent = t.drink;
+  }
+  const loginH2 = document.querySelector('#loginBox h2');
+  if (loginH2) loginH2.textContent = t.admin;
+  const loginBtn = document.querySelector('#loginBox button');
+  if (loginBtn) loginBtn.textContent = t.login;
+  const langSel = document.getElementById('langSelect');
+  if (langSel) langSel.value = currentLang;
 }
 // ADMIN UI
 function openAdmin() {
-  document.getElementById("adminPanel").style.display = "block";
+  const panel = document.getElementById("adminPanel");
+  if (!panel) return;
+  panel.style.display = "block";
   document.body.classList.add("admin-open");
-  document.getElementById("adminPin").focus();
+  const pin = document.getElementById("adminPin");
+  if (pin) pin.focus();
 }
 
 function closeAdmin() {
-  document.getElementById("adminPanel").style.display = "none";
+  const panel = document.getElementById("adminPanel");
+  if (!panel) return;
+  panel.style.display = "none";
   document.body.classList.remove("admin-open");
 }
 // ENTER KEY SUPPORT FOR ADMIN LOGIN
@@ -291,11 +422,13 @@ document.addEventListener("keydown", function (e) {
 function checkPin() {
   const pinInput = document.getElementById("adminPin");
   const loginBox = document.getElementById("loginBox");
+  if (!pinInput || !loginBox) return;
   const inner = loginBox.querySelector(".login-inner") || loginBox;
 
   if (pinInput.value === PIN) {
     loginBox.style.display = "none";
-    document.getElementById("editor").style.display = "block";
+    const editor = document.getElementById("editor");
+    if (editor) editor.style.display = "block";
     loadAdmin();
   } else {
 
@@ -369,7 +502,12 @@ row.insertCell().innerHTML = `
 function updateItem(index, field, value) {
   if (!menu[index]) return;
 
-  menu[index][field] = field === "price" ? Number(value) : value;
+  if (field === "price") {
+    const n = Number(value);
+    menu[index][field] = Number.isFinite(n) ? n : (menu[index][field] || 0);
+  } else {
+    menu[index][field] = value;
+  }
 
   // live refresh menu without saving
   renderMenu(pages[pageIndex], document.getElementById("searchInput")?.value || "");
@@ -498,12 +636,25 @@ if ("serviceWorker" in navigator) {
 window.addEventListener("load", () => {
   const splash = document.getElementById("splash");
 
+  if (!splash) return;
+
+  // small initial delay so first paint completes — keep this very short so backdrop is brief
   setTimeout(() => {
     splash.classList.add("reveal");
 
+    // keep splash visible for this many ms before hiding (title stay duration)
+    const VISIBLE_MS = 2500;    const CIRCLE_CLOSE_DELAY = 5000; // Additional delay before circle closes
     setTimeout(() => {
       splash.classList.add("hide");
-    }, 1000);
+
+      // remove element after CSS transition finishes (slightly longer than transition)
+      setTimeout(() => {
+        try {
+          if (splash && splash.parentNode) splash.parentNode.removeChild(splash);
+        } catch (e) { /* ignore */ }
+      }, 1500);
+
+    }, VISIBLE_MS);
 
   }, 700);
 });
@@ -524,62 +675,8 @@ document.addEventListener("click", () => {
   }
 }, { once: true });
 
-// === Food Description Tooltip Logic (final version) ===
-let tipTimer = null;
+// Tooltip not used anymore (description shown inline under name)
 
-// unified event handling
-document.addEventListener("mousedown", startHold);
-document.addEventListener("touchstart", startHold, { passive: true });
-document.addEventListener("mouseup", endHold);
-document.addEventListener("mouseleave", endHold);
-document.addEventListener("touchend", endHold);
-
-function startHold(e) {
-  const item = e.target.closest(".chalk-item");
-  if (!item) return;
-
-  const nameEl = item.querySelector(".chalk-name");
-  if (!nameEl) return;
-
-  const nameText = nameEl.textContent.trim();
-  const food = menu.find(f => f.en === nameText || f.am === nameText);
-  if (!food) return;
-
-  const textToShow = currentLang === "am" ? food.desc_am || food.desc : food.desc;
-  if (!textToShow) return;
-
-  // small delay indicates “long press”
-  tipTimer = setTimeout(() => safeShowTip(textToShow, e), 550);
-}
-
-function endHold() {
-  if (tipTimer) clearTimeout(tipTimer);
-
-  const tipBox = document.getElementById("foodTip");
-  if (tipBox) tipBox.classList.remove("show");
-}
-
-function safeShowTip(text, evt) {
-  // lazy lookup each time in case DOM was rebuilt
-  const tipBox = document.getElementById("foodTip");
-  if (!tipBox) return;                     // element missing
-  if (typeof text !== "string") return;    // sanity check
-
-  tipBox.textContent = text;
-
-  // pick coordinates that work on touch + mouse
-  const touch = evt.touches ? evt.touches[0] : evt;
-  const x = touch?.clientX || 30;
-  const y = touch?.clientY || 80;
-
-  // prevent bubble from going off screen on mobile
-  const maxX = window.innerWidth - 270;
-  const maxY = window.innerHeight - 120;
-  tipBox.style.left = `${Math.min(x + 12, maxX)}px`;
-  tipBox.style.top  = `${Math.min(y + 12, maxY)}px`;
-
-  tipBox.classList.add("show");
-}
 // === Description Editor Logic ===
 let currentDescIndex = null;  // tracks which menu item is being edited
 
@@ -592,25 +689,34 @@ function openDescEditor(index) {
   const food = menu[index];
   if (!food) return;
 
+  if (!modal || !enBox || !amBox) return;
+
   enBox.value = food.desc || "";
   amBox.value = food.desc_am || "";
 
   modal.style.display = "flex";
 }
-
-document.getElementById("descCancelBtn").addEventListener("click", () => {
-  document.getElementById("descModal").style.display = "none";
+// attach modal buttons safely
+const descCancelBtn = document.getElementById("descCancelBtn");
+if (descCancelBtn) descCancelBtn.addEventListener("click", () => {
+  const modal = document.getElementById("descModal");
+  if (modal) modal.style.display = "none";
 });
 
-document.getElementById("descSaveBtn").addEventListener("click", () => {
+const descSaveBtn = document.getElementById("descSaveBtn");
+if (descSaveBtn) descSaveBtn.addEventListener("click", () => {
   const modal = document.getElementById("descModal");
   const food = menu[currentDescIndex];
   if (!food) return;
 
-  food.desc = document.getElementById("descEnBox").value.trim();
-  food.desc_am = document.getElementById("descAmBox").value.trim();
+  const enBox = document.getElementById("descEnBox");
+  const amBox = document.getElementById("descAmBox");
+  if (!enBox || !amBox) return;
+
+  food.desc = enBox.value.trim();
+  food.desc_am = amBox.value.trim();
 
   saveMenu();
   renderMenu(pages[pageIndex]);
-  modal.style.display = "none";
+  if (modal) modal.style.display = "none";
 });
